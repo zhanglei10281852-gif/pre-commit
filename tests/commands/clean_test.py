@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os.path
 from unittest import mock
 
@@ -33,3 +34,36 @@ def test_clean_idempotent(store):
     assert not os.path.exists(store.directory)
     clean(store)
     assert not os.path.exists(store.directory)
+
+
+def test_clean_outputs_removed_and_deferred(store, cap_out):
+    busy = os.path.join(store.directory, 'repobusy1')
+    free = os.path.join(store.directory, 'repofree1')
+    os.makedirs(busy)
+    os.makedirs(free)
+
+    hold = contextlib.ExitStack()
+    store._hold_marker(hold, 'repobusy1')
+    try:
+        assert not clean(store)
+    finally:
+        hold.close()
+
+    out = cap_out.get()
+    assert f'Cleaned {free}.' in out
+    assert os.path.exists(busy)
+    assert not os.path.exists(free)
+    assert 'is in use by another process -- skipped.' in out
+    # the deferred resource must be distinguishable from removed ones
+    assert f'Cleaned {busy}.' not in out
+
+    # after the holder exits, a follow-up run completes the clean
+    assert not clean(store)
+    assert not os.path.exists(store.directory)
+
+
+def test_clean_full_wipe_when_idle(store, cap_out):
+    assert not clean(store)
+    assert cap_out.get().splitlines()[-1] == (
+        f'Cleaned {store.directory}.'
+    )

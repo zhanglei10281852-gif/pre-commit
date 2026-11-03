@@ -416,7 +416,10 @@ def run(
     # Set pre_commit flag
     environ['PRE_COMMIT'] = '1'
 
-    with contextlib.ExitStack() as exit_stack:
+    # clones, environment installs and hook executions are marked active so
+    # a concurrent `pre-commit clean` / `pre-commit gc` cannot remove the
+    # repositories and environments used by this run
+    with store.active(), contextlib.ExitStack() as exit_stack:
         if stash:
             exit_stack.enter_context(staged_files_only(store.directory))
 

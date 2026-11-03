@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os
 
 import pre_commit.constants as C
@@ -173,3 +174,34 @@ def test_gc_pre_1_14_roll_forward(store, cap_out):
 
     assert not gc(store)
     assert cap_out.get() == '0 repo(s) removed.\n'
+
+
+def test_gc_defers_active_repo_and_finishes_later(store, cap_out):
+    # an unreferenced repository (no registered config) would normally be
+    # removed -- while another process has it active it must survive gc
+    path = os.path.join(store.directory, 'repoinuse01')
+    os.makedirs(path)
+    with store.connect() as db:
+        db.execute(
+            'INSERT INTO repos (repo, ref, path) VALUES (?, ?, ?)',
+            ('unused', 'unused-ref', path),
+        )
+
+    hold = contextlib.ExitStack()
+    store._hold_marker(hold, os.path.basename(path))
+    try:
+        assert not gc(store)
+        # directory and db row are both left for a future gc
+        assert os.path.exists(path)
+        assert _repo_count(store) == 1
+        assert (
+            '1 repo(s) in use by another process' in cap_out.get()
+        )
+    finally:
+        hold.close()
+
+    # once released, the next gc deterministically reclaims it
+    assert not gc(store)
+    assert not os.path.exists(path)
+    assert _repo_count(store) == 0
+    assert cap_out.get().splitlines()[-1] == '1 repo(s) removed.'

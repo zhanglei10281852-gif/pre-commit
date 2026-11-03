@@ -53,25 +53,28 @@ def try_repo(args: argparse.Namespace) -> int:
         repo, ref = _repo_ref(tempdir, args.repo, args.ref)
 
         store = Store(tempdir)
-        if args.hook:
-            hooks = [{'id': args.hook}]
-        else:
-            repo_path = store.clone(repo, ref)
-            manifest = load_manifest(os.path.join(repo_path, C.MANIFEST_FILE))
-            manifest = sorted(manifest, key=lambda hook: hook['id'])
-            hooks = [{'id': hook['id']} for hook in manifest]
+        with store.active():
+            if args.hook:
+                hooks = [{'id': args.hook}]
+            else:
+                repo_path = store.clone(repo, ref)
+                manifest = load_manifest(
+                    os.path.join(repo_path, C.MANIFEST_FILE),
+                )
+                manifest = sorted(manifest, key=lambda hook: hook['id'])
+                hooks = [{'id': hook['id']} for hook in manifest]
 
-        config = {'repos': [{'repo': repo, 'rev': ref, 'hooks': hooks}]}
-        config_s = yaml_dump(config)
+            config = {'repos': [{'repo': repo, 'rev': ref, 'hooks': hooks}]}
+            config_s = yaml_dump(config)
 
-        config_filename = os.path.join(tempdir, C.CONFIG_FILE)
-        with open(config_filename, 'w') as cfg:
-            cfg.write(config_s)
+            config_filename = os.path.join(tempdir, C.CONFIG_FILE)
+            with open(config_filename, 'w') as cfg:
+                cfg.write(config_s)
 
-        output.write_line('=' * 79)
-        output.write_line('Using config:')
-        output.write_line('=' * 79)
-        output.write(config_s)
-        output.write_line('=' * 79)
+            output.write_line('=' * 79)
+            output.write_line('Using config:')
+            output.write_line('=' * 79)
+            output.write(config_s)
+            output.write_line('=' * 79)
 
-        return run(config_filename, store, args)
+            return run(config_filename, store, args)

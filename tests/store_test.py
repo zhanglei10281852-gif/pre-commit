@@ -2,18 +2,25 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import os
 import os.path
 import shlex
 import sqlite3
 import stat
+import subprocess
+import sys
+import time
 from unittest import mock
 
 import pytest
 
 import pre_commit.constants as C
 from pre_commit import git
+from pre_commit.commands.gc import _gc
+from pre_commit.store import _ACTIVE_DIRNAME
 from pre_commit.store import _get_default_directory
 from pre_commit.store import _LOCAL_RESOURCES
+from pre_commit.store import _SESSION_NAME
 from pre_commit.store import Store
 from pre_commit.util import CalledProcessError
 from pre_commit.util import cmd_output
@@ -317,6 +324,324 @@ def test_mark_config_as_used_readonly(tmpdir):
     # should be skipped due to readonly
     store.mark_config_used(str(cfg))
     assert _select_all_configs(store) == []
+
+
+def _active_dir(store: Store) -> str:
+    return os.path.join(store.directory, _ACTIVE_DIRNAME)
+
+
+def _marker_groups(store: Store) -> list[str]:
+    if not os.path.exists(_active_dir(store)):
+        return []
+    return os.listdir(_active_dir(store))
+
+
+def _make_clone_repo(tempdir_factory) -> tuple[str, str]:
+    path = git_dir(tempdir_factory)
+    with contextlib.chdir(path):
+        git_commit()
+        rev = git.head_rev(path)
+    return path, rev
+
+
+def test_active_creates_and_releases_session_marker(store):
+    assert not os.path.exists(_active_dir(store))
+    with store.active():
+        assert _marker_groups(store) == [_SESSION_NAME]
+    assert not os.path.exists(_active_dir(store))
+
+
+def test_active_is_reentrant(store):
+    with store.active():
+        with store.active():
+            assert _marker_groups(store) == [_SESSION_NAME]
+        # the outer session is still active
+        assert _marker_groups(store) == [_SESSION_NAME]
+    assert not os.path.exists(_active_dir(store))
+
+
+def test_active_marker_released_on_exception(store):
+    with pytest.raises(RuntimeError):
+        with store.active():
+            raise RuntimeError('boom')
+    assert not os.path.exists(_active_dir(store))
+
+
+def test_active_marker_released_on_keyboard_interrupt(store):
+    with pytest.raises(KeyboardInterrupt):
+        with store.active():
+            raise KeyboardInterrupt
+    assert not os.path.exists(_active_dir(store))
+
+
+def test_clone_within_active_is_marked_and_deduplicated(
+        store, tempdir_factory,
+):
+    path, rev = _make_clone_repo(tempdir_factory)
+
+    with store.active():
+        cloned = store.clone(path, rev)
+        name = os.path.basename(cloned)
+        # the resource is marked active for the duration of the command
+        assert name in _marker_groups(store)
+        group = os.path.join(_active_dir(store), name)
+        # exactly one marker regardless of how many hooks resolve it
+        assert len(os.listdir(group)) == 1
+        store.clone(path, rev)
+        store.clone(path, rev)
+        assert len(os.listdir(group)) == 1
+
+    # released on normal exit -- no permanent activity left behind
+    assert not os.path.exists(_active_dir(store))
+
+
+def test_clone_without_active_does_not_leave_marker(
+        store, tempdir_factory,
+):
+    path, rev = _make_clone_repo(tempdir_factory)
+    store.clone(path, rev)
+    assert not os.path.exists(_active_dir(store))
+
+
+def test_failed_clone_releases_its_marker(store, tempdir_factory):
+    with pytest.raises(Exception):
+        with store.active():
+            store.clone('/i_dont_exist_lol', 'fake_rev')
+    # the failed clone directory and its marker are both gone
+    assert not os.path.exists(_active_dir(store))
+    assert [
+        d for d in os.listdir(store.directory) if d.startswith('repo')
+    ] == []
+
+
+def test_scan_active_prunes_stale_markers(store):
+    # a process which died (normally or after being killed) leaves the
+    # marker file behind but no lock -- it must be reclaimed
+    group = os.path.join(_active_dir(store), 'repodeadbeef')
+    os.makedirs(group)
+    with open(os.path.join(group, '1234-stale'), 'w') as f:
+        f.write('pid: 1234\n')
+
+    assert store._scan_active() == set()
+    assert not os.path.exists(group)
+
+
+def test_scan_active_finds_live_marker(store):
+    name = 'repoalive12'
+    stack = contextlib.ExitStack()
+    store._hold_marker(stack, name)
+    try:
+        assert store._scan_active() == {name}
+    finally:
+        stack.close()
+    assert store._scan_active() == set()
+
+
+def test_clean_skips_active_resource_and_finishes_later(store):
+    busy = os.path.join(store.directory, 'repobusy0001')
+    os.makedirs(busy)
+    hold = contextlib.ExitStack()
+    store._hold_marker(hold, 'repobusy0001')
+    try:
+        free = os.path.join(store.directory, 'repofree00001')
+        os.makedirs(free)
+
+        removed, deferred = store.clean()
+        # the free resource is deleted, the busy one is reported deferred
+        assert free in removed
+        assert deferred == [busy]
+        assert os.path.exists(busy)
+        assert not os.path.exists(free)
+        # coordination state is preserved while anything is active
+        assert os.path.exists(store.directory)
+        assert os.path.exists(store.db_path)
+    finally:
+        hold.close()
+
+    # once released, a later clean deterministically empties the store
+    removed, deferred = store.clean()
+    assert removed == [store.directory]
+    assert deferred == []
+    assert not os.path.exists(store.directory)
+
+
+def test_clean_while_session_active_keeps_scratch_and_coordination(store):
+    scratch = os.path.join(store.directory, 'patch1234-5678')
+    free_repo = os.path.join(store.directory, 'repoold00001')
+    with store.active():
+        open(scratch, 'w').close()
+        os.makedirs(free_repo)
+
+        removed, deferred = store.clean()
+        # unreferenced cached resources are still reclaimed mid-session
+        assert free_repo in removed
+        assert not os.path.exists(free_repo)
+        # scratch files and coordination state survive an active session
+        assert os.path.exists(scratch)
+        assert os.path.exists(store.db_path)
+
+    assert not os.path.exists(_active_dir(store))
+
+
+def test_clean_defers_resources_while_global_lock_is_held(store):
+    free = os.path.join(store.directory, 'repoother00')
+    os.makedirs(free)
+
+    # a clone / environment install / gc holding the global lock means no
+    # cache resource is reclaimed in this pass -- clean never blocks on it
+    with store.exclusive_lock():
+        removed, deferred = store.clean()
+    assert removed == []
+    assert deferred == [free]
+    assert os.path.exists(free)
+
+    # a follow-up clean with no operation in progress fully converges
+    removed, deferred = store.clean()
+    assert removed == [store.directory]
+    assert deferred == []
+
+
+def test_active_resolution_takes_global_lock(store, tempdir_factory):
+    # resolving an already cloned resource inside an activity is atomic
+    # with respect to gc/clean (lock acquired + marker registered)
+    path, rev = _make_clone_repo(tempdir_factory)
+    cloned = store.clone(path, rev)
+    with store.active():
+        with store.exclusive_lock():
+            pass  # the resolution must not hold a lingering lock
+        resolved = store.clone(path, rev)
+        assert resolved == cloned
+        assert os.path.basename(cloned) in _marker_groups(store)
+
+
+def test_clean_removes_db_row_for_deleted_resource(store):
+    path = os.path.join(store.directory, 'repoorphan001')
+    os.makedirs(path)
+    with store.connect() as db:
+        db.execute(
+            'INSERT INTO repos (repo, ref, path) VALUES (?, ?, ?)',
+            ('orphan', 'ref', path),
+        )
+
+    removed, deferred = store.clean()
+    assert removed == [store.directory]
+    assert not os.path.exists(store.directory)
+
+
+# ---------------------------------------------------------------------------
+# cross-process tests
+
+
+_HOLDER_SCRIPT = """
+import os, sys, time
+from pre_commit.store import Store
+home, repo, rev, ready, go = sys.argv[1:6]
+store = Store(home)
+with store.active():
+    store.clone(repo, rev)
+    open(ready, 'w').close()
+    while not os.path.exists(go):
+        time.sleep(0.01)
+"""
+
+
+def _spawn_repo_holder(tmp_path, repo, rev):
+    home = str(tmp_path / 'home')
+    os.makedirs(home)
+    ready = str(tmp_path / 'ready')
+    go = str(tmp_path / 'go')
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = dict(os.environ, PYTHONPATH=root)
+    proc = subprocess.Popen(
+        (sys.executable, '-c', _HOLDER_SCRIPT, home, repo, rev, ready, go),
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    deadline = time.monotonic() + 120
+    while not os.path.exists(ready):
+        assert proc.poll() is None, proc.stderr.read().decode()
+        assert time.monotonic() < deadline
+        time.sleep(0.02)
+    return proc, home, go
+
+
+def _list_repo_dirs(home: str) -> list[str]:
+    if not os.path.exists(home):
+        return []
+    return [
+        name for name in os.listdir(home)
+        if os.path.isdir(os.path.join(home, name)) and name.startswith('repo')
+    ]
+
+
+def test_concurrent_clean_defers_active_process_resources(
+        tmp_path, tempdir_factory,
+):
+    repo, rev = _make_clone_repo(tempdir_factory)
+    proc, home, go = _spawn_repo_holder(tmp_path, repo, rev)
+    try:
+        # a concurrent clean cannot remove the in-use clone
+        removed, deferred = Store(home).clean()
+        assert removed == []
+        assert len(deferred) == 1
+        assert os.path.exists(deferred[0])
+        assert len(_list_repo_dirs(home)) == 1
+        # the coordination state is left untouched for the other process
+        assert os.path.exists(os.path.join(home, 'db.db'))
+    finally:
+        open(go, 'w').close()
+        assert proc.wait() == 0
+
+    # after the process exits, a follow-up clean fully converges
+    removed, deferred = Store(home).clean()
+    assert removed == [home]
+    assert deferred == []
+    assert not os.path.exists(home)
+
+
+def test_concurrent_gc_defers_active_process_resources(
+        tmp_path, tempdir_factory,
+):
+    repo, rev = _make_clone_repo(tempdir_factory)
+    proc, home, go = _spawn_repo_holder(tmp_path, repo, rev)
+    try:
+        # the clone is unreferenced by any registered config, so it would
+        # be gc-able -- but it is in active use
+        removed, in_use = _gc(Store(home))
+        assert (removed, in_use) == (0, 1)
+        assert len(_list_repo_dirs(home)) == 1
+    finally:
+        open(go, 'w').close()
+        assert proc.wait() == 0
+
+    # once released, gc removes it deterministically
+    store = Store(home)
+    removed, in_use = _gc(store)
+    assert (removed, in_use) == (1, 0)
+    assert _list_repo_dirs(home) == []
+
+
+def test_clean_reclaims_resources_from_killed_process(
+        tmp_path, tempdir_factory,
+):
+    repo, rev = _make_clone_repo(tempdir_factory)
+    proc, home, _go = _spawn_repo_holder(tmp_path, repo, rev)
+    try:
+        proc.kill()
+        assert proc.wait() == -15 or proc.returncode is not None
+        # wait for the operating system to release the locks
+        deadline = time.monotonic() + 30
+        while Store(home).clean()[0] != [home] and time.monotonic() < deadline:
+            time.sleep(0.05)
+        # stale markers are identified and the store is fully reclaimed
+        removed, deferred = Store(home).clean()
+        assert removed == [home]
+        assert deferred == []
+        assert not os.path.exists(home)
+    finally:
+        if proc.poll() is None:  # pragma: no cover
+            proc.kill()
 
 
 def test_clone_with_recursive_submodules(store, tmp_path):

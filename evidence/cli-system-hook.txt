@@ -1,0 +1,6 @@
+Review system hook.......................................................Passed
+- hook id: review-system
+- duration: 0.16s
+
+SYSTEM-HOOK-OK
+

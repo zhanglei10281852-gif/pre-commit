@@ -1,0 +1,19 @@
+rubrics:
+  - id: 1
+    type: f2p
+    text: clean 与正在执行或安装 hook 的进程并发时，不会删除其仓库或语言环境；活跃操作可继续完成，clean 明确报告延后资源。
+  - id: 2
+    type: f2p
+    text: gc 会保留活跃但不再被配置引用的资源，同时仍删除其他无引用资源，并在使用结束后的后续 gc 中完成回收。
+  - id: 3
+    type: f2p
+    text: 远程仓库、附加依赖 clone 和语言环境的活跃状态覆盖 run、hook-impl、install-hooks 与 try-repo；多个消费者共享资源时，单个消费者退出不会提前释放最后一个使用者。
+  - id: 4
+    type: f2p
+    text: 正常完成、环境安装失败和用户中断会释放占用；进程异常消失留下的陈旧状态可被可靠识别并回收，且不会把仍存活的操作误判为陈旧。
+  - id: 5
+    type: f2p
+    text: 目录删除部分失败或维护进程中止后，数据库与磁盘状态保持可恢复，后续 clean 或 gc 能继续收敛而不产生重复 clone、永久占用或不可达目录。
+  - id: 6
+    type: p2p
+    text: 没有并发维护时，首次 clone、环境健康检查、additional_dependencies 隔离、并发安装锁、普通 hook 输出以及空闲 clean 和 gc 的既有行为保持兼容。

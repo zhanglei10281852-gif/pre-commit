@@ -1,0 +1,8 @@
+项目：pre-commit-pre-commit-4aac00dd-dd0e-43ee-9343-d02c30d5c1ab
+Session：573311172224344:f17e1d263d29031af6b87df2e7900b55_6ae9cbfd2341cef17663d7fc.6ae9cbfe2341cef17663d7ff.6ae9cbfd2341cef17663d7fd:TraeCode CN.3.3.104.no_sid.no_ppe.T(2026/11/3 19:56:46)
+有效轮数：97，Harness：Trae，证据来源：count-trae-cn-steps.py，范围：latest_turn，warnings=[]
+时长：2026-11-03T11:56:46.280Z 至 2026-11-03T13:12:45.078Z，共 4558 秒，超过两小时=否；renderer 行 17592 与 20760。
+验证：新增 lifecycle/store/clean/gc 测试 52 passed、1 xfailed；兼容性定向测试 22 passed；flake8 通过。
+环境说明：全仓测试和 bash fixture 在 Windows 环境受 POSIX shell、symlink、file transport 与语言工具链限制，已保存完整日志；结论不使用这些环境失败判定模型失败。
+确定失败一：clean 在活跃扫描完成后才取得删除锁；受控交错中，新消费者完成标记并创建 repo 后，clean 删除 active 标记时返回 PermissionError，没有返回延后资源。
+确定失败二：空闲全量 clean 先删除 db.db，再删除 repo；注入目录部分删除失败后 db.db 不存在、旧 repo 残缺，下一次 make_local 创建第二个 repo。

@@ -46,6 +46,18 @@ if sys.platform == 'win32':  # pragma: no cover (windows)
             # "Regions should be locked only briefly and should be unlocked
             # before closing a file or exiting the program."
             msvcrt.locking(fileno, msvcrt.LK_UNLCK, _region)
+
+    @contextlib.contextmanager
+    def _try_locked(fileno: int) -> Generator[bool]:
+        try:
+            msvcrt.locking(fileno, msvcrt.LK_NBLCK, _region)
+        except OSError:
+            yield False
+        else:
+            try:
+                yield True
+            finally:
+                msvcrt.locking(fileno, msvcrt.LK_UNLCK, _region)
 else:  # pragma: win32 no cover
     import fcntl
 
@@ -64,6 +76,18 @@ else:  # pragma: win32 no cover
         finally:
             fcntl.flock(fileno, fcntl.LOCK_UN)
 
+    @contextlib.contextmanager
+    def _try_locked(fileno: int) -> Generator[bool]:
+        try:
+            fcntl.flock(fileno, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            yield False
+        else:
+            try:
+                yield True
+            finally:
+                fcntl.flock(fileno, fcntl.LOCK_UN)
+
 
 @contextlib.contextmanager
 def lock(
@@ -73,3 +97,17 @@ def lock(
     with open(path, 'a+') as f:
         with _locked(f.fileno(), blocked_cb):
             yield
+
+
+@contextlib.contextmanager
+def try_lock(path: str) -> Generator[bool]:
+    """Attempt to take an exclusive lock without blocking.
+
+    yields `True` if the lock was acquired (meaning no other process is
+    holding it) or `False` if another process currently holds the lock.
+    Stale locks left behind by a dead process are reported as acquirable
+    because the operating system releases locks when a process exits.
+    """
+    with open(path, 'a+') as f:
+        with _try_locked(f.fileno()) as locked:
+            yield locked

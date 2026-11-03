@@ -58,7 +58,7 @@ def _mark_used_repos(
             ))
 
 
-def _gc(store: Store) -> int:
+def _gc(store: Store) -> tuple[int, int]:
     with store.exclusive_lock(), store.connect() as db:
         store._create_configs_table(db)
 
@@ -83,16 +83,32 @@ def _gc(store: Store) -> int:
         paths = [(path,) for path in dead_configs]
         db.executemany('DELETE FROM configs WHERE path = ?', paths)
 
+        # repositories currently being cloned, installed or executed are
+        # marked active -- leave both the row and the directory for a later
+        # gc instead of deleting them out from under the other process
+        active = store._scan_active()
+        in_use = {
+            k for k in unused_repos
+            if os.path.basename(all_repos[k]) in active
+        }
+        removable = unused_repos - in_use
+
         db.executemany(
             'DELETE FROM repos WHERE repo = ? and ref = ?',
-            sorted(unused_repos),
+            sorted(removable),
         )
-        for k in unused_repos:
+        for k in removable:
             rmtree(all_repos[k])
 
-        return len(unused_repos)
+        return len(removable), len(in_use)
 
 
 def gc(store: Store) -> int:
-    output.write_line(f'{_gc(store)} repo(s) removed.')
+    removed, in_use = _gc(store)
+    output.write_line(f'{removed} repo(s) removed.')
+    if in_use:
+        output.write_line(
+            f'{in_use} repo(s) in use by another process -- '
+            f'left for a future `pre-commit gc`.',
+        )
     return 0

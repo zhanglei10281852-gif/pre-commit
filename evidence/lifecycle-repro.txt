@@ -1,0 +1,20 @@
+{
+  "scan_then_new_consumer": {
+    "clean_error": "PermissionError: [WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'C:\\\\Users\\\\czxy4\\\\AppData\\\\Local\\\\Temp\\\\tmph_9s09mi\\\\scan-race-home\\\\active\\\\repo13ac21fc\\\\27068-2bb36028a9ed4b93a9f5de7f5d66ca7a'",
+    "removed": [],
+    "deferred": [],
+    "child_repo_exists": true,
+    "db_exists": true,
+    "active_exists": true,
+    "child_exit": 0
+  },
+  "partial_full_clean": {
+    "clean_error": "OSError: injected partial directory deletion",
+    "db_after_failure": false,
+    "old_repo_exists": true,
+    "old_repo_is_partial": true,
+    "new_repo_path": "C:\\Users\\czxy4\\AppData\\Local\\Temp\\tmph_9s09mi\\partial-home\\repo9613834a",
+    "old_repo_path": "C:\\Users\\czxy4\\AppData\\Local\\Temp\\tmph_9s09mi\\partial-home\\repob657cdd1",
+    "duplicate_repo_created": true
+  }
+}

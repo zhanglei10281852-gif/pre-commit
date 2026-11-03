@@ -142,7 +142,10 @@ def install(
 
 
 def install_hooks(config_file: str, store: Store) -> int:
-    install_hook_envs(all_hooks(load_config(config_file), store), store)
+    # clones and environment installs are marked active so a concurrent
+    # `pre-commit clean` / `pre-commit gc` cannot remove them mid-install
+    with store.active():
+        install_hook_envs(all_hooks(load_config(config_file), store), store)
     return 0
 
 

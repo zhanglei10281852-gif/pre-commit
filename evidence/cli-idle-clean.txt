@@ -1,0 +1,2 @@
+An unexpected error has occurred: PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\czxy4\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\clrjit.dll'
+Check the log at C:\Users\czxy4\pre-commit.log

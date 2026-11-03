@@ -1,0 +1,451 @@
+FFF..FF....                                                              [100%]
+================================== FAILURES ===================================
+_____________________ test_run[options0-outputs0-0-True] ______________________
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4D9DED0>
+store = <pre_commit.store.Store object at 0x0000018EE4D9E5D0>
+repo_with_passing_hook = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options0_outputs0_0_T0\\2'
+options = {}, outputs = (b'Bash hook', b'Passed'), expected_ret = 0
+stage = True
+
+    @pytest.mark.parametrize(
+        ('options', 'outputs', 'expected_ret', 'stage'),
+        (
+            ({}, (b'Bash hook', b'Passed'), 0, True),
+            ({'verbose': True}, (b'foo.py\nHello World',), 0, True),
+            ({'hook': 'bash_hook'}, (b'Bash hook', b'Passed'), 0, True),
+            (
+                {'hook': 'nope'},
+                (b'No hook with id `nope` in stage `pre-commit`',),
+                1,
+                True,
+            ),
+            (
+                {'hook': 'nope', 'hook_stage': 'pre-push'},
+                (b'No hook with id `nope` in stage `pre-push`',),
+                1,
+                True,
+            ),
+            (
+                {'all_files': True, 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            (
+                {'files': ('foo.py',), 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            ({}, (b'Bash hook', b'(no files to check)', b'Skipped'), 0, False),
+        ),
+    )
+    def test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+    ):
+>       _test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+        )
+
+F:\swe\099906\project-01\tests\commands\run_test.py:391: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4D9DED0>
+store = <pre_commit.store.Store object at 0x0000018EE4D9E5D0>
+repo = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options0_outputs0_0_T0\\2'
+opts = {}, expected_outputs = (b'Bash hook', b'Passed'), expected_ret = 0
+stage = True, config_file = '.pre-commit-config.yaml'
+
+    def _test_run(
+        cap_out, store, repo, opts, expected_outputs, expected_ret, stage,
+        config_file=C.CONFIG_FILE,
+    ):
+        if stage:
+            stage_a_file()
+        args = run_opts(**opts)
+        ret, printed = _do_run(cap_out, store, repo, args, config_file=config_file)
+    
+>       assert ret == expected_ret, (ret, expected_ret, printed)
+E       AssertionError: (1, 0, b'[INFO] Initializing environment for file://C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29...est-of-czxy4pytest-29test_run_options0_outputs0_0_T00.pre-commitrepo09a94268binhook.sh: No such file or directory
+E         
+E         ')
+E       assert 1 == 0
+
+F:\swe\099906\project-01\tests\commands\run_test.py:154: AssertionError
+------------------------------ Captured log call ------------------------------
+INFO     pre_commit:store.py:296 Initializing environment for file://C:\Users\czxy4\AppData\Local\Temp\pytest-of-czxy4\pytest-29\test_run_options0_outputs0_0_T0\1.
+_____________________ test_run[options1-outputs1-0-True] ______________________
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4D59450>
+store = <pre_commit.store.Store object at 0x0000018EE4D5A850>
+repo_with_passing_hook = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options1_outputs1_0_T0\\2'
+options = {'verbose': True}, outputs = (b'foo.py\nHello World',)
+expected_ret = 0, stage = True
+
+    @pytest.mark.parametrize(
+        ('options', 'outputs', 'expected_ret', 'stage'),
+        (
+            ({}, (b'Bash hook', b'Passed'), 0, True),
+            ({'verbose': True}, (b'foo.py\nHello World',), 0, True),
+            ({'hook': 'bash_hook'}, (b'Bash hook', b'Passed'), 0, True),
+            (
+                {'hook': 'nope'},
+                (b'No hook with id `nope` in stage `pre-commit`',),
+                1,
+                True,
+            ),
+            (
+                {'hook': 'nope', 'hook_stage': 'pre-push'},
+                (b'No hook with id `nope` in stage `pre-push`',),
+                1,
+                True,
+            ),
+            (
+                {'all_files': True, 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            (
+                {'files': ('foo.py',), 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            ({}, (b'Bash hook', b'(no files to check)', b'Skipped'), 0, False),
+        ),
+    )
+    def test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+    ):
+>       _test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+        )
+
+F:\swe\099906\project-01\tests\commands\run_test.py:391: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4D59450>
+store = <pre_commit.store.Store object at 0x0000018EE4D5A850>
+repo = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options1_outputs1_0_T0\\2'
+opts = {'verbose': True}, expected_outputs = (b'foo.py\nHello World',)
+expected_ret = 0, stage = True, config_file = '.pre-commit-config.yaml'
+
+    def _test_run(
+        cap_out, store, repo, opts, expected_outputs, expected_ret, stage,
+        config_file=C.CONFIG_FILE,
+    ):
+        if stage:
+            stage_a_file()
+        args = run_opts(**opts)
+        ret, printed = _do_run(cap_out, store, repo, args, config_file=config_file)
+    
+>       assert ret == expected_ret, (ret, expected_ret, printed)
+E       AssertionError: (1, 0, b'[INFO] Initializing environment for file://C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29...est-of-czxy4pytest-29test_run_options1_outputs1_0_T00.pre-commitrepo4588f28cbinhook.sh: No such file or directory
+E         
+E         ')
+E       assert 1 == 0
+
+F:\swe\099906\project-01\tests\commands\run_test.py:154: AssertionError
+------------------------------ Captured log call ------------------------------
+INFO     pre_commit:store.py:296 Initializing environment for file://C:\Users\czxy4\AppData\Local\Temp\pytest-of-czxy4\pytest-29\test_run_options1_outputs1_0_T0\1.
+_____________________ test_run[options2-outputs2-0-True] ______________________
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4D43FD0>
+store = <pre_commit.store.Store object at 0x0000018EE4D43E10>
+repo_with_passing_hook = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options2_outputs2_0_T0\\2'
+options = {'hook': 'bash_hook'}, outputs = (b'Bash hook', b'Passed')
+expected_ret = 0, stage = True
+
+    @pytest.mark.parametrize(
+        ('options', 'outputs', 'expected_ret', 'stage'),
+        (
+            ({}, (b'Bash hook', b'Passed'), 0, True),
+            ({'verbose': True}, (b'foo.py\nHello World',), 0, True),
+            ({'hook': 'bash_hook'}, (b'Bash hook', b'Passed'), 0, True),
+            (
+                {'hook': 'nope'},
+                (b'No hook with id `nope` in stage `pre-commit`',),
+                1,
+                True,
+            ),
+            (
+                {'hook': 'nope', 'hook_stage': 'pre-push'},
+                (b'No hook with id `nope` in stage `pre-push`',),
+                1,
+                True,
+            ),
+            (
+                {'all_files': True, 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            (
+                {'files': ('foo.py',), 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            ({}, (b'Bash hook', b'(no files to check)', b'Skipped'), 0, False),
+        ),
+    )
+    def test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+    ):
+>       _test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+        )
+
+F:\swe\099906\project-01\tests\commands\run_test.py:391: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4D43FD0>
+store = <pre_commit.store.Store object at 0x0000018EE4D43E10>
+repo = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options2_outputs2_0_T0\\2'
+opts = {'hook': 'bash_hook'}, expected_outputs = (b'Bash hook', b'Passed')
+expected_ret = 0, stage = True, config_file = '.pre-commit-config.yaml'
+
+    def _test_run(
+        cap_out, store, repo, opts, expected_outputs, expected_ret, stage,
+        config_file=C.CONFIG_FILE,
+    ):
+        if stage:
+            stage_a_file()
+        args = run_opts(**opts)
+        ret, printed = _do_run(cap_out, store, repo, args, config_file=config_file)
+    
+>       assert ret == expected_ret, (ret, expected_ret, printed)
+E       AssertionError: (1, 0, b'[INFO] Initializing environment for file://C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29...est-of-czxy4pytest-29test_run_options2_outputs2_0_T00.pre-commitrepo15f40a3ebinhook.sh: No such file or directory
+E         
+E         ')
+E       assert 1 == 0
+
+F:\swe\099906\project-01\tests\commands\run_test.py:154: AssertionError
+------------------------------ Captured log call ------------------------------
+INFO     pre_commit:store.py:296 Initializing environment for file://C:\Users\czxy4\AppData\Local\Temp\pytest-of-czxy4\pytest-29\test_run_options2_outputs2_0_T0\1.
+_____________________ test_run[options5-outputs5-0-True] ______________________
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4D518D0>
+store = <pre_commit.store.Store object at 0x0000018EE4D51D90>
+repo_with_passing_hook = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options5_outputs5_0_T0\\2'
+options = {'all_files': True, 'verbose': True}, outputs = (b'foo.py',)
+expected_ret = 0, stage = True
+
+    @pytest.mark.parametrize(
+        ('options', 'outputs', 'expected_ret', 'stage'),
+        (
+            ({}, (b'Bash hook', b'Passed'), 0, True),
+            ({'verbose': True}, (b'foo.py\nHello World',), 0, True),
+            ({'hook': 'bash_hook'}, (b'Bash hook', b'Passed'), 0, True),
+            (
+                {'hook': 'nope'},
+                (b'No hook with id `nope` in stage `pre-commit`',),
+                1,
+                True,
+            ),
+            (
+                {'hook': 'nope', 'hook_stage': 'pre-push'},
+                (b'No hook with id `nope` in stage `pre-push`',),
+                1,
+                True,
+            ),
+            (
+                {'all_files': True, 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            (
+                {'files': ('foo.py',), 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            ({}, (b'Bash hook', b'(no files to check)', b'Skipped'), 0, False),
+        ),
+    )
+    def test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+    ):
+>       _test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+        )
+
+F:\swe\099906\project-01\tests\commands\run_test.py:391: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4D518D0>
+store = <pre_commit.store.Store object at 0x0000018EE4D51D90>
+repo = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options5_outputs5_0_T0\\2'
+opts = {'all_files': True, 'verbose': True}, expected_outputs = (b'foo.py',)
+expected_ret = 0, stage = True, config_file = '.pre-commit-config.yaml'
+
+    def _test_run(
+        cap_out, store, repo, opts, expected_outputs, expected_ret, stage,
+        config_file=C.CONFIG_FILE,
+    ):
+        if stage:
+            stage_a_file()
+        args = run_opts(**opts)
+        ret, printed = _do_run(cap_out, store, repo, args, config_file=config_file)
+    
+>       assert ret == expected_ret, (ret, expected_ret, printed)
+E       AssertionError: (1, 0, b'[INFO] Initializing environment for file://C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29...est-of-czxy4pytest-29test_run_options5_outputs5_0_T00.pre-commitrepodc4d2f51binhook.sh: No such file or directory
+E         
+E         ')
+E       assert 1 == 0
+
+F:\swe\099906\project-01\tests\commands\run_test.py:154: AssertionError
+------------------------------ Captured log call ------------------------------
+INFO     pre_commit:store.py:296 Initializing environment for file://C:\Users\czxy4\AppData\Local\Temp\pytest-of-czxy4\pytest-29\test_run_options5_outputs5_0_T0\1.
+_____________________ test_run[options6-outputs6-0-True] ______________________
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4F89A50>
+store = <pre_commit.store.Store object at 0x0000018EE4F8A010>
+repo_with_passing_hook = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options6_outputs6_0_T0\\2'
+options = {'files': ('foo.py',), 'verbose': True}, outputs = (b'foo.py',)
+expected_ret = 0, stage = True
+
+    @pytest.mark.parametrize(
+        ('options', 'outputs', 'expected_ret', 'stage'),
+        (
+            ({}, (b'Bash hook', b'Passed'), 0, True),
+            ({'verbose': True}, (b'foo.py\nHello World',), 0, True),
+            ({'hook': 'bash_hook'}, (b'Bash hook', b'Passed'), 0, True),
+            (
+                {'hook': 'nope'},
+                (b'No hook with id `nope` in stage `pre-commit`',),
+                1,
+                True,
+            ),
+            (
+                {'hook': 'nope', 'hook_stage': 'pre-push'},
+                (b'No hook with id `nope` in stage `pre-push`',),
+                1,
+                True,
+            ),
+            (
+                {'all_files': True, 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            (
+                {'files': ('foo.py',), 'verbose': True},
+                (b'foo.py',),
+                0,
+                True,
+            ),
+            ({}, (b'Bash hook', b'(no files to check)', b'Skipped'), 0, False),
+        ),
+    )
+    def test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+    ):
+>       _test_run(
+            cap_out,
+            store,
+            repo_with_passing_hook,
+            options,
+            outputs,
+            expected_ret,
+            stage,
+        )
+
+F:\swe\099906\project-01\tests\commands\run_test.py:391: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cap_out = <tests.conftest.Fixture object at 0x0000018EE4F89A50>
+store = <pre_commit.store.Store object at 0x0000018EE4F8A010>
+repo = 'C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29\\test_run_options6_outputs6_0_T0\\2'
+opts = {'files': ('foo.py',), 'verbose': True}, expected_outputs = (b'foo.py',)
+expected_ret = 0, stage = True, config_file = '.pre-commit-config.yaml'
+
+    def _test_run(
+        cap_out, store, repo, opts, expected_outputs, expected_ret, stage,
+        config_file=C.CONFIG_FILE,
+    ):
+        if stage:
+            stage_a_file()
+        args = run_opts(**opts)
+        ret, printed = _do_run(cap_out, store, repo, args, config_file=config_file)
+    
+>       assert ret == expected_ret, (ret, expected_ret, printed)
+E       AssertionError: (1, 0, b'[INFO] Initializing environment for file://C:\\Users\\czxy4\\AppData\\Local\\Temp\\pytest-of-czxy4\\pytest-29...est-of-czxy4pytest-29test_run_options6_outputs6_0_T00.pre-commitrepo56ceb6d5binhook.sh: No such file or directory
+E         
+E         ')
+E       assert 1 == 0
+
+F:\swe\099906\project-01\tests\commands\run_test.py:154: AssertionError
+------------------------------ Captured log call ------------------------------
+INFO     pre_commit:store.py:296 Initializing environment for file://C:\Users\czxy4\AppData\Local\Temp\pytest-of-czxy4\pytest-29\test_run_options6_outputs6_0_T0\1.
+============================== warnings summary ===============================
+C:\Users\czxy4\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\config\__init__.py:1636
+  C:\Users\czxy4\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\config\__init__.py:1636: PytestConfigWarning: Unknown config option: env
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/commands/run_test.py::test_run[options0-outputs0-0-True] - Asser...
+FAILED tests/commands/run_test.py::test_run[options1-outputs1-0-True] - Asser...
+FAILED tests/commands/run_test.py::test_run[options2-outputs2-0-True] - Asser...
+FAILED tests/commands/run_test.py::test_run[options5-outputs5-0-True] - Asser...
+FAILED tests/commands/run_test.py::test_run[options6-outputs6-0-True] - Asser...
+5 failed, 6 passed, 1 warning in 21.65s
